@@ -48,7 +48,8 @@ jobs:
           tar \
             --dereference --hard-dereference \
             -cvf "$RUNNER_TEMP/github-pages.tar" \
-            ./dist/*
+            -C ./dist \
+            .
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
