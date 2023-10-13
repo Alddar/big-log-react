@@ -38,7 +38,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: mkdir public
       - run: make main
       - run: npm ci
       - run: npm run build
