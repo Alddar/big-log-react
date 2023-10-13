@@ -26,4 +26,6 @@ dist-ssr
 main.js
 main.wasm
 
-public
+public/main.js
+public/log
+public/main.wasm
