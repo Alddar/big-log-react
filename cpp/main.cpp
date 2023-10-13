@@ -6,7 +6,7 @@
 
 int rowsCount = 0;
 int rowsSize = 1000;
-const char *logRows = NULL;
+char *logRows = NULL;
 size_t *logRowStarts = (size_t *)malloc(rowsSize * sizeof(logRowStarts));
 bool dataLoaded = false;
 char* tempLine = NULL;
@@ -14,27 +14,26 @@ char* tempLine = NULL;
 void downloadSucceeded(emscripten_fetch_t *fetch)
 {
     printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
-    int lastLineStart = 0;
+    logRows = const_cast<char*>(fetch->data);
+    logRowStarts[0] = 0;
     for (int i = 0; i < fetch->numBytes - 1; i++)
     {
-        if (fetch->data[i] == '\n')
+        if (logRows[i] == '\n')
         {
-            // std::memcpy(logRows[rowsCount], fetch->data + lastLineStart, (i - lastLineStart) * sizeof(char));
-            logRowStarts[rowsCount] = i;
-            lastLineStart = i + 1;
-
             rowsCount++;
             if (rowsCount >= rowsSize)
             {
                 rowsSize *= 1.5;
                 logRowStarts = (size_t *)realloc(logRowStarts, rowsSize * sizeof(logRowStarts));
             }
-        }
 
-        logRows = fetch->data;
+            logRows[i] = 0;
+            logRowStarts[rowsCount] = i + 1;
+        }
     }
-    // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-    //   emscripten_fetch_close(fetch); // Free data associated with the fetch.
+    rowsCount++;
+    // Not freeing, the buffer gets reused.
+    // emscripten_fetch_close(fetch);
     dataLoaded = true;
     emscripten_run_script("document.dispatchEvent(new Event('logLoaded'));");
 }
@@ -64,12 +63,7 @@ int main()
 
 EXTERN EMSCRIPTEN_KEEPALIVE char *get_line(int number)
 {
-    free(tempLine);
-    size_t length = logRowStarts[number + 1] -  logRowStarts[number];
-    tempLine = (char*) malloc(length + 1);
-    std::memcpy(tempLine, logRows, length);
-    tempLine[length] = 0;
-    return tempLine;
+    return logRows + logRowStarts[number];
 }
 
 EXTERN EMSCRIPTEN_KEEPALIVE bool data_loaded()
