@@ -3,13 +3,15 @@
 #include <cstring>
 #include <emscripten/emscripten.h>
 #include <emscripten/fetch.h>
+#include <emscripten/console.h>
 
 int rowsCount = 0;
 int rowsSize = 1000;
 char *logRows = NULL;
 size_t *logRowStarts = (size_t *)malloc(rowsSize * sizeof(logRowStarts));
-bool dataLoaded = false;
 char* tempLine = NULL;
+char* logUrl = NULL;
+emscripten_fetch_t *fetchObject = NULL;
 
 void downloadSucceeded(emscripten_fetch_t *fetch)
 {
@@ -33,8 +35,7 @@ void downloadSucceeded(emscripten_fetch_t *fetch)
     }
     rowsCount++;
     // Not freeing, the buffer gets reused.
-    // emscripten_fetch_close(fetch);
-    dataLoaded = true;
+    fetchObject = fetch;
     emscripten_run_script("document.dispatchEvent(new Event('logLoaded'));");
 }
 
@@ -46,13 +47,7 @@ void downloadFailed(emscripten_fetch_t *fetch)
 
 int main()
 {
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
-    strcpy(attr.requestMethod, "GET");
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess = downloadSucceeded;
-    attr.onerror = downloadFailed;
-    emscripten_fetch(&attr, "https://frovdfc4o1re.objectstorage.eu-frankfurt-1.oci.customer-oci.com/n/frovdfc4o1re/b/test-bucket/o/normal_trace.csv");
+    printf("WASM initialized\n");
 }
 
 #ifdef __cplusplus
@@ -66,12 +61,31 @@ EXTERN EMSCRIPTEN_KEEPALIVE char *get_line(int number)
     return logRows + logRowStarts[number];
 }
 
-EXTERN EMSCRIPTEN_KEEPALIVE bool data_loaded()
-{
-    return dataLoaded;
-}
-
 EXTERN EMSCRIPTEN_KEEPALIVE int num_lines()
 {
     return rowsCount;
+}
+
+EXTERN EMSCRIPTEN_KEEPALIVE char* log_url()
+{
+    return logUrl;
+}
+
+EXTERN EMSCRIPTEN_KEEPALIVE void download_log(char* _logUrl)
+{
+    free(logUrl);
+    logUrl = _logUrl;
+    printf("Downloading log '%s'...\n", logUrl);
+    if(fetchObject) {
+        emscripten_fetch_close(fetchObject);
+        fetchObject = NULL;
+    }
+    rowsCount = 0;
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess = downloadSucceeded;
+    attr.onerror = downloadFailed;
+    emscripten_fetch(&attr, logUrl);
 }
