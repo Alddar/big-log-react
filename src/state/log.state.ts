@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
+//@ts-ignore
 import Module from "../generated/main.js";
 
 // const useLogStore = create((set) => {
@@ -9,7 +10,7 @@ import Module from "../generated/main.js";
 //   };
 // });
 
-var module = null
+var module: any = null
 
 export const useLogStore = create(
   combine(
@@ -22,7 +23,7 @@ export const useLogStore = create(
     (set, get) => {
       Module({
         locateFile: () => "/main.wasm"
-      }).then((_module) => {
+      }).then((_module: any) => {
         module = _module
         set((state) => ({
           ...state,
