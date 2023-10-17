@@ -22,7 +22,7 @@ export const useLogStore = create(
     },
     (set, get) => {
       Module({
-        locateFile: () => "/main.wasm"
+        locateFile: () => "/big-log-react/main.wasm"
       }).then((_module: any) => {
         module = _module
         set((state) => ({
