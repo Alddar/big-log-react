@@ -29,7 +29,7 @@ const routeTree = rootRoute.addChildren([indexRoute, logRoute]);
 const hashHistory = createHashHistory()
 
 // Create the router using your route tree
-const router = new Router({ routeTree, basepath: "/big-log-react", history: hashHistory });
+const router = new Router({ routeTree, history: hashHistory });
 
 // Register your router for maximum type safety
 declare module "@tanstack/react-router" {
